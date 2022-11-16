@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Registration extends Model
 {
     use HasFactory;
+
+    protected $table = 'registrations';
+
+    function citizen(){
+        return $this->belongsTo(Citizen::class, 'citizen_id');
+    }
 }

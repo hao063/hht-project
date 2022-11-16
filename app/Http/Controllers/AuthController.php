@@ -17,7 +17,7 @@ class AuthController extends Controller
             'email'    => $dataForm['email'],
             'password' => $dataForm['password'],
         ]);
-        if (is_null($user)) {
+        if (!$user) {
             return $this->responseData([], 'Email or password not correct', 401);
         }
         $auth              = Auth::user();
@@ -29,6 +29,20 @@ class AuthController extends Controller
             'token'    => $auth->token_login,
         ];
         return $this->responseData($data, 'Logged in successfully');
+    }
+
+    public function getUser(): \Illuminate\Http\JsonResponse
+    {
+        return $this->responseData(Auth::user());
+    }
+
+    public function logout(): \Illuminate\Http\JsonResponse
+    {
+        $auth = Auth::user();
+        $auth->token_login = null;
+        $auth->save();
+        Auth::logout();
+        return $this->responseData([], 'Logout Successful');
     }
 
 }

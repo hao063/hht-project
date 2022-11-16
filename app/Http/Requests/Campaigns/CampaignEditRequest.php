@@ -17,8 +17,8 @@ class CampaignEditRequest extends BaseRequest
     {
         return [
             'name' => 'required|unique:campaigns,slug',
-            'slug' => 'required|unique:campaigns,slug,'.$this->id.'|regex:/^[a-z0-9]+$/',
-            'date' => 'required|date_format:Y/m/d',
+            'slug' => 'required|unique:campaigns,slug,'.$this->id.'|regex:/^[a-z0-9-]+$/',
+            'date' => 'required|date_format:Y-m-d',
         ];
     }
 

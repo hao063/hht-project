@@ -18,7 +18,7 @@ class CampaignCreateRequest extends BaseRequest
         return [
             'name' => 'required|unique:campaigns,slug',
             'slug' => 'required|unique:campaigns,slug|regex:/^[a-z0-9]+$/',
-            'date' => 'required|date_format:Y/m/d',
+            'date' => 'required|date_format:Y-m-d',
         ];
     }
 

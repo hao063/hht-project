@@ -26,4 +26,25 @@ class Campaign extends Model
         return $this->hasMany(CampaignTicket::class);
     }
 
+    public function Places(){
+        return $this->hasManyThrough(
+            Place::class,
+            Area::class,
+            'campaign_id',
+            'area_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function getListSessions()
+    {
+        $sessions = [];
+        foreach($this->Places as $place){
+            foreach($place->Sessions as $session_item){
+                $sessions[] = $session_item;
+            }
+        }
+        return $sessions;
+    }
 }

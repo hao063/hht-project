@@ -30,6 +30,16 @@ class CampaignController extends Controller
         return $this->responseData($data, "Event successfully created");
     }
 
+    public function getCampaign($id): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $campaigns = Campaign::whereId($id)->first();
+            return $this->responseData($campaigns->toArray());
+        }catch (\Throwable $e) {
+            return $this->responseData([], $e->getMessage(), 500);
+        }
+    }
+
     public function editCampaign(CampaignEditRequest $request, $id): \Illuminate\Http\JsonResponse
     {
         $dataForm = $request->all();
@@ -37,10 +47,10 @@ class CampaignController extends Controller
         return $this->responseData($data, "Event successfully updated");
     }
 
-    public function detailCampaign($id): \Illuminate\Http\JsonResponse
+    public function detailCampaign($id)
     {
         try {
-            $campaign = Campaign::with([
+            $campaign                     = Campaign::with([
                 'Areas' => function($query) {
                     $query->with([
                         'Places' => function($query2) {
@@ -58,10 +68,47 @@ class CampaignController extends Controller
                 },
                 'Tickets',
             ])->whereId($id)->first();
+            $dataResponse                 = [];
+            $data                         = $campaign->toArray();
+            $dataResponse['name']         = $data['name'];
+            $dataResponse['organizer_id'] = $data['organizer_id'];
+            $dataResponse['slug']         = $data['slug'];
+            $dataResponse['id']           = $data['id'];
+            $dataResponse['date']         = Carbon::parse($data['date'])->format('d-m-Y');
 
-            $data = $campaign->toArray();
 
-            $data['tickets'] = $campaign->Tickets->map(function($ticket) {
+            foreach ($data['areas'] as $key => $area) {
+                $dataResponse['areas'][$key]['id']   = $area['id'];
+                $dataResponse['areas'][$key]['name'] = $area['name'];
+                $dataResponse['areas'][$key]['place_total'] = count($area['places']);
+                $totalSession = 0;
+                foreach ($area['places'] as $itemPlace) {
+                    $dataResponse['places'][$itemPlace['id']]['id']       = $itemPlace['id'];
+                    $dataResponse['places'][$itemPlace['id']]['area_id']  = $itemPlace['area_id'];
+                    $dataResponse['places'][$itemPlace['id']]['capacity'] = $itemPlace['capacity'];
+                    $dataResponse['places'][$itemPlace['id']]['name']     = $itemPlace['name'];
+                    $totalSession += count($itemPlace['sessions']);
+                    foreach ($itemPlace['sessions'] as $session) {
+                        $dataResponse['sessions'][$session['id']]['id']          = $session['id'];
+                        $dataResponse['sessions'][$session['id']]['cost']        = $session['cost'];
+                        $dataResponse['sessions'][$session['id']]['description'] = $session['description'];
+                        $dataResponse['sessions'][$session['id']]['end']         = Carbon::parse($session['end'])
+                            ->format('H:i');
+                        $dataResponse['sessions'][$session['id']]['place']       = $session['place'];
+                        $dataResponse['sessions'][$session['id']]['place_id']    = $session['place_id'];
+                        $dataResponse['sessions'][$session['id']]['start']       = Carbon::parse($session['start'])
+                            ->format('H:i');
+                        $dataResponse['sessions'][$session['id']]['title']       = $session['title'];
+                        $dataResponse['sessions'][$session['id']]['type']        = $session['type'];
+                        $dataResponse['sessions'][$session['id']]['vaccinate']   = $session['vaccinate'];
+                        $dataResponse['sessions'][$session['id']]['place_name']  = $session['place']['name'];
+                        $dataResponse['sessions'][$session['id']]['vaccinate']   = $session['place']['area']['name'];
+                    }
+                }
+                $dataResponse['areas'][$key]['session_total'] = $totalSession;
+            }
+
+            $dataResponse['tickets'] = $campaign->Tickets->map(function($ticket) {
                 $dataTicket                = [];
                 $dataTicket['id']          = $ticket['id'];
                 $dataTicket['campaign_id'] = $ticket['campaign_id'];
@@ -73,16 +120,17 @@ class CampaignController extends Controller
                     $dataTicket['special_validity'] = null;
                 } elseif ($dataSpecialValidity['type'] == 'date') {
                     $dataTicket['type']             = $dataSpecialValidity['type'];
-                    $dataTicket['special_validity'] = $dataSpecialValidity['date'];
+                    $dataTicket['special_validity'] = Carbon::parse($dataSpecialValidity['date'])->format('d-m-Y');
                 } elseif ($dataSpecialValidity['type'] == 'amount') {
                     $dataTicket['type']             = $dataSpecialValidity['type'];
                     $dataTicket['special_validity'] = $dataSpecialValidity['amount'];
                 }
                 return $dataTicket;
             })->toArray();
-            return $this->responseData($data);
+
+            return $this->responseData($dataResponse);
         } catch (\Throwable $e) {
-           return $this->responseData($e->getMessage(), "Error", 500);
+            return $this->responseData($e->getMessage(), "Error", 500);
         }
     }
 

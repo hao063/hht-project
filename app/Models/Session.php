@@ -21,4 +21,9 @@ class Session extends Model
         return $this->belongsTo(Place::class);
     }
 
+    public function Registration()
+    {
+        return $this->belongsToMany(Registration::class, 'session_registrations', 'session_id', 'registration_id');
+    }
+
 }
